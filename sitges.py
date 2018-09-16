@@ -41,6 +41,8 @@ def step1():
         time = c0[1]
         # Name
         name = cols[1].text.strip()
+        # URL
+        url = cols[1].a['href']
         print(name)
         # Place
         place = cols[2].text.strip()
@@ -51,7 +53,10 @@ def step1():
         data = requests.get(ics_url).text
 
         e = Event.create(data)
+
         e.SUMMARY, e.DESCRIPTION = e.DESCRIPTION, e.SUMMARY
+        e.DESCRIPTION = f'Seccio: {e.DESCRIPTION}\n\n{url}\n{name}'
+        e.DESCRIPTION = e.DESCRIPTION.replace('\n', '\\n')
         start = arrow.get(e.DTSTART,'YYYYMMDDTHHmmss')
         start = start.to('GMT+2')
         try:
@@ -60,7 +65,7 @@ def step1():
         except:
             pass
 
-        events.append(e.to_text())
+        events.append(e)
 
     with open('ics.pickle', 'wb') as f:
         pickle.dump(events, f)
@@ -72,7 +77,7 @@ def step2():
 
     cal = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//hacksw/handcal//NONSGML v1.0//EN\r\nCALSCALE:GREGORIAN\r\n'
     for event in events:
-        e = '\r\n'.join(event.split('\r\n'))
+        e = '\r\n'.join(event.to_text().split('\r\n'))
         cal = f'{cal}{e}\r\n'
     cal = f'{cal}\r\nEND:VCALENDAR'
 
